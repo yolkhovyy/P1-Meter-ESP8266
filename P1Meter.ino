@@ -8,13 +8,9 @@
 #include "CRC16.h"
 
 //===Change values from here===
-const char* ssid = "WIFISSID";
-const char* password = "PASSWORD";
+const char* ssid = "RadKit";
+const char* password = "Waterschap511";
 const char* hostName = "ESPP1Meter";
-const char* domoticzIP = "192.168.1.35";
-const int domoticzPort = 8090;
-const int domoticzGasIdx = 291;
-const int domoticzEneryIdx = 294;
 const bool outputOnSerial = true;
 //===Change values to here===
 
@@ -36,12 +32,6 @@ char telegram[MAXLINELENGTH];
 SoftwareSerial mySerial(SERIAL_RX, -1, true, MAXLINELENGTH); // (RX, TX. inverted, buffer)
 
 unsigned int currentCRC=0;
-
-void SendToDomoLog(char* message)
-{
-  char url[512];
-  sprintf(url, "http://%s:%d/json.htm?type=command&param=addlogmessage&message=%s", domoticzIP, domoticzPort, message); 
-}
 
 void setup() {
   Serial.begin(115200);
@@ -89,53 +79,16 @@ void setup() {
 }
 
 
-bool SendToDomo(int idx, int nValue, char* sValue)
-{
-  HTTPClient http;
-  bool retVal = false;
-  char url[255];
-  sprintf(url, "http://%s:%d/json.htm?type=command&param=udevice&idx=%d&nvalue=%d&svalue=%s", domoticzIP, domoticzPort, idx, nValue, sValue);
-  Serial.printf("[HTTP] GET... URL: %s\n",url);
-  http.begin(url); //HTTP
-  int httpCode = http.GET();
-  // httpCode will be negative on error
-  if (httpCode > 0)
-  { // HTTP header has been send and Server response header has been handled
-    Serial.printf("[HTTP] GET... code: %d\n", httpCode);
-
-    // file found at server
-    if (httpCode == HTTP_CODE_OK) {
-      String payload = http.getString();
-      retVal = true;
-    }
-  }
-  else
-  {
-    Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-  }
-  http.end();
-  return retVal;
-}
-
-
-
 void UpdateGas()
 {
-  //sends over the gas setting to domoticz
-  if(prevGAS!=mGAS)
-  {
-    char sValue[10];
-    sprintf(sValue, "%d", mGAS);
-    if(SendToDomo(domoticzGasIdx, 0, sValue))
-      prevGAS=mGAS;
-  }
+  char sValue[10];
+  sprintf(sValue, "%d", mGAS);
 }
 
 void UpdateElectricity()
 {
   char sValue[255];
   sprintf(sValue, "%d;%d;%d;%d;%d;%d", mEVLT, mEVHT, mEOLT, mEOHT, mEAV, mEAT);
-  SendToDomo(domoticzEneryIdx, 0, sValue);
 }
 
 
